@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>Jogo 06</title>
+  <script src="Personagem.js"></script>
+  <script src="Mapa.js"></script>
+  <script src="BarraStatus.js"></script>
+</head>
+<body>
+  <h1>Jogo 06</h1>
+  <canvas id="canvas" width="760" height="530"></canvas>
+  <script>
+  //Audio
+  var somIni = new Audio();
+  somIni.src = "Som/Inicio.m4a";
+
+  var somFim = new Audio();
+  somFim.src = "Som/Fim.m4a";
+
+  var somSel = new Audio();
+  somSel.src = "Som/Selecao.m4a";
+
+  var somMoeda = new Audio();
+  somMoeda.src = "Som/Moeda.m4a";
+
+  var somExplosao = new Audio();
+  somExplosao.src = "Som/Explosao.m4a";
+
+  var somFimVitoria = new Audio();
+  somFimVitoria.src = "Som/Vitoria.m4a";
+
+  var somDecisao = new Audio();
+  somDecisao.src = "Som/Decisao.m4a";
+
+
+
+
+  //Tela
+  var canvas = document.getElementsByTagName("canvas")[0];
+  var ctx = canvas.getContext("2d");
+
+  var dt = anterior = 0;
+  var tempo = 90;
+
+  var mapa = new Mapa (13,19);
+  var barra = new BarraStatus();
+
+  var imagem = new Image();
+  imagem.src = "bg.png";
+
+  var numPersonagem = 0;
+  var personagem = new Personagem(mapa);
+
+  var cenario = 0;
+
+  function atualizar (t){
+    if(cenario == 0){
+      somIni.play();
+      ctx.fillStyle = "black";
+      ctx.fillRect(0,0, canvas.width, canvas.height);
+
+      ctx.drawImage(imagem,0,0);
+
+      ctx.font = '70pt Arial';
+      ctx.fillStyle = "Teal";
+      ctx.textAlign = "center";
+      ctx.strokeStyle = "gray";
+      ctx.fillText("Minas", 350, 150);
+      ctx.strokeText("Minas", 350, 150);
+      ctx.font = '20pt Arial';
+      ctx.fillText("Pressione qualquer tecla para continuar", 350, 470);
+
+      requestAnimationFrame(atualizar);
+    } else if (cenario==1){
+      //Seleção personagem
+      var caravela = new Image();
+      caravela.src = "caravela.png";
+      ctx.drawImage(imagem,0,0);
+      requestAnimationFrame(atualizar);
+      ctx.textAlign = "center";
+      ctx.strokeStyle = "gray";
+      ctx.font = '50pt Arial';
+      ctx.fillStyle = "LightBlue";
+      ctx.fillText("Selecione a caravela", 350, 100);
+      ctx.strokeText("Selecione a caravela", 350, 100);
+
+      ctx.strokeStyle = "white";
+      //Contorno de seleção
+      if(numPersonagem == 0){
+        ctx.strokeRect(209,190, 60, 60);
+      }  else if(numPersonagem==1){
+        ctx.strokeRect(209,330, 60, 60);
+      }
+      ctx.lineWidth=3;
+      ctx.font = '25pt Arial';
+      ctx.fillStyle = "white";
+      ctx.fillText("Branca", 234, 280);
+      //  ctx.fillRect(219,200, 30, 30);
+      ctx.fillStyle = "Navy";
+      ctx.fillText("Azul", 234, 420);
+      //ctx.fillRect(219,340, 30, 30);
+
+      ctx.drawImage(caravela,32,0,32,32,219,200, 40, 40);
+      ctx.drawImage(caravela,32,128,32,32,219,340, 40, 40);
+
+
+      ctx.font = '30pt Arial';
+      ctx.fillStyle = "wheat";
+
+      ctx.strokeStyle = "white";
+      //Contorno de seleção
+      if(numPersonagem == 2){
+        ctx.strokeRect(442,190, 60, 60);
+      }  else if(numPersonagem==3){
+        ctx.strokeRect(442,330, 60, 60);
+      }
+      ctx.lineWidth=2;
+      ctx.font = '25pt Arial';
+      ctx.fillStyle = "red";
+
+
+      ctx.fillText("Vermelha", 466, 280);
+
+      ctx.fillStyle = "yellow";
+
+      ctx.fillText("Amarela", 466, 420);
+
+      ctx.drawImage(caravela,128,0,32,32,452,200, 40, 40);
+      ctx.drawImage(caravela,128,128,32,32,452,340, 40, 40);
+
+
+
+
+
+    } else if (cenario ==2){
+      somFimVitoria.pause();
+      somFim.pause();
+      somIni.play();
+
+      dt = (t - anterior)/1000;
+      mapa.desenhar(ctx);
+
+      personagem.desenhar(ctx);
+      personagem.mover(mapa,dt);
+
+      //Desenha a barra de status
+      barra.desenhar(ctx,Math.trunc(this.tempo),personagem.itens,mapa.retornarMinas(personagem.gy,personagem.gx),mapa.retornarItens(personagem.gy,personagem.gx));
+      anterior = t;
+
+      //Verificação de pisos
+      mapa.alteraVisibilidade(personagem.gy,personagem.gx);
+      if(mapa.verificaTesouro(personagem.gy,personagem.gx)==true){
+        somMoeda.load();
+        somMoeda.play();
+        personagem.itens+=1;
+      }
+      tempo -=0.015;
+      //condição game OVER
+      if(personagem.vida<1 || personagem.itens==mapa.numTesouros || tempo<=0){
+        cenario=3;
+      }
+
+      requestAnimationFrame(atualizar);
+    } else if (cenario ==3){
+      //Tela de Game Over
+      somIni.pause();
+      ctx.drawImage(imagem,0,0);
+      //Tela de vitoria
+      if(personagem.itens==mapa.numTesouros){
+        somFimVitoria.play();
+        ctx.textAlign = "center";
+      //  ctx.fillStyle = "black";
+      //  ctx.fillRect(0,0, canvas.width, canvas.height);
+
+        //Texto Game Over
+        ctx.fillStyle = "wheat";
+        ctx.font = '60pt Arial';
+        ctx.fillText("Vitória", 350, 150);
+        //ctx.fillText("Pontuação", 350, 321);
+        //  ctx.fillText(pontoAtual, 350, 421);
+
+      } else {
+        //Tela de Derrota
+        somFim.play();
+        ctx.textAlign = "center";
+        //ctx.fillStyle = "black";
+      //  ctx.fillRect(0,0, canvas.width, canvas.height);
+
+        //Texto Game Over
+        ctx.fillStyle = "wheat";
+        ctx.font = '60pt Arial';
+        ctx.fillText("GAME OVER", 350, 150);
+        ctx.fillText("Itens Recolhidos", 350, 321);
+        ctx.fillText(personagem.itens, 350, 421);
+      }
+
+      anterior = t;
+      requestAnimationFrame(atualizar);
+    }
+
+  }
+
+  addEventListener("keydown", function (e) {
+    switch (e.keyCode) {
+      case 13://Enter
+      if(cenario==1){
+        somDecisao.load();
+        somDecisao.play();
+        personagem=new Personagem(mapa,numPersonagem);
+        cenario=2;
+      }
+      break;
+      case 32://Espaço
+      break;
+      case 37: //Botão Esquerdo
+      if(cenario==1){
+        somSel.load();
+        somSel.play();
+        if(numPersonagem%2==0){
+          numPersonagem=Math.abs(numPersonagem-2);
+        } else if(numPersonagem==1) {
+          numPersonagem=3;
+        } else {
+          numPersonagem=1;
+        }
+
+      } else if(cenario==2){
+        if(mapa.verificaParede(personagem.gy,personagem.gx-1)==false){
+          personagem.vx-=1;
+          personagem.sentido=3;
+        }
+      }
+      break;
+      case 39: //Botão Direito
+      if(cenario==1){
+        somSel.load();
+        somSel.play();
+        if(numPersonagem==0){
+          numPersonagem=2;
+        } else if(numPersonagem==1) {
+          numPersonagem=3;
+        } else if(numPersonagem==2){
+          numPersonagem=0;
+        } else {
+          numPersonagem=1;
+        }
+      } else if(cenario==2){
+        if(mapa.verificaParede(personagem.gy,personagem.gx+1)==false){
+          personagem.vx+=1;
+          personagem.sentido=1;
+        }
+      }
+      break;
+      case 38: //Botão Cima
+      if(cenario==1){
+        somSel.load();
+        somSel.play();
+        if(numPersonagem==0){
+          numPersonagem=1;
+        } else if(numPersonagem==1) {
+          numPersonagem=0;
+        } else if(numPersonagem==2){
+          numPersonagem=3;
+        } else {
+          numPersonagem=2;
+        }
+      } else if(cenario==2){
+        if(mapa.verificaParede(personagem.gy-1,personagem.gx)==false){
+          personagem.vy-=1;
+          personagem.sentido=1;
+        }
+      }
+      break;
+      case 40: //Botão Baixo
+      if(cenario==1){
+        somSel.load();
+        somSel.play();
+        if(numPersonagem==0){
+          numPersonagem=1;
+        } else if(numPersonagem==1) {
+          numPersonagem=0;
+        } else if(numPersonagem==2){
+          numPersonagem=3;
+        } else {
+          numPersonagem=2;
+        }
+
+      } else if(cenario==2){
+        if(mapa.verificaParede(personagem.gy+1,personagem.gx)==false){
+          personagem.vy+=1;
+          personagem.sentido=0;
+        }
+      }
+      break;
+
+      default:
+      if(cenario==0){
+        cenario=1;
+      } else if (cenario==3){
+        cenario=1;
+        mapa = new Mapa (13,19);
+      }
+
+    }});
+    addEventListener("keyup", function (e) {
+      switch (e.keyCode) {
+        case 37: //Botão Esquerdo
+        //  personagem.vx = 0;
+        break;
+        case 39: //Botão Direito
+        //  personagem.vx = 0;
+        break;
+        case 38: //Botão Cima
+        //  personagem.vy = 0;
+        break;
+        case 40: //Botão Baixo
+        //  personagem.vy=0;
+        break;
+        default:
+        if(cenario==0){
+          cenario=1;
+        } else if (cenario==3){
+          cenario=1;
+          tempo = 90;
+          mapa = new Mapa (13,19);
+        }
+      }
+    });
+
+    requestAnimationFrame(atualizar);
+    </script>
+  </body>
+  </html>
